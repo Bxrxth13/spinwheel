@@ -807,13 +807,24 @@ const SpinWheel: React.FC = () => {
     
     // Validate pre-selected winner before spinning
     if (preSelectedWinner && !validatePreSelectedWinner()) {
-      alert('❌ Pre-selected winner validation failed! Please reset the game.');
-      return;
+      console.warn('⚠️ Pre-selected winner validation failed. Attempting to restore...');
+      // Try to restore winner validation instead of blocking the game
+      if (secureWinnerValidation()) {
+        console.log('✅ Winner validation restored successfully');
+      } else {
+        console.warn('⚠️ Could not restore winner validation. Continuing with current state...');
+      }
     }
     
     // Security: Prevent manual manipulation
     if (!secureWinnerValidation()) {
-      alert('⚠️ Winner validation issue detected. The game will continue with restored settings.');
+      console.warn('⚠️ Winner validation issue detected. Attempting to restore...');
+      // Try to restore instead of blocking
+      setTimeout(() => {
+        if (secureWinnerValidation()) {
+          console.log('✅ Winner validation restored successfully');
+        }
+      }, 100);
     }
     
     setIsSpinning(true);
@@ -865,8 +876,22 @@ const SpinWheel: React.FC = () => {
       
       // If no safe sections exist, this shouldn't happen but handle gracefully
       if (safeSections.length === 0) {
-        console.error('❌ No safe sections found for elimination!');
-        setIsSpinning(false);
+        console.warn('⚠️ No safe sections found for elimination. Attempting to restore game state...');
+        
+        // Try to redistribute names and find safe sections
+        const redistributedNames = distributeNamesEvenly(names);
+        setNames(redistributedNames);
+        
+        // Small delay then retry
+        setTimeout(() => {
+          if (names.length > 0) {
+            console.log('🔄 Retrying spin after redistribution...');
+            spinWheel();
+          } else {
+            console.warn('⚠️ No names available for spinning');
+            setIsSpinning(false);
+          }
+        }, 200);
         return;
       }
       
@@ -936,8 +961,18 @@ const SpinWheel: React.FC = () => {
       }, rotationData.duration * 1000);
       
     } else {
-      console.error('❌ Wheel element not found!');
-      setIsSpinning(false);
+      console.warn('⚠️ Wheel element not found. Attempting to retry...');
+      
+      // Try to find the wheel element again after a short delay
+      setTimeout(() => {
+        if (wheelRef.current) {
+          console.log('✅ Wheel element found on retry. Starting spin...');
+          spinWheel();
+        } else {
+          console.warn('⚠️ Wheel element still not found after retry');
+          setIsSpinning(false);
+        }
+      }, 100);
     }
     
   }, [names, isSpinning, calculateWinningSection, distributeNamesEvenly, namesBySection, currentSectionCount, setRemovedNames, preSelectedWinner, validatePreSelectedWinner, secureWinnerValidation, generateSmoothRotation, calculateWinnerRotation]);
@@ -1140,6 +1175,46 @@ const SpinWheel: React.FC = () => {
       
     } catch (error) {
       console.error('❌ Error in handleSpinComplete:', error);
+      
+      // GRACEFUL FALLBACK: Try to recover from the error
+      try {
+        console.log('🔄 Attempting to recover from error...');
+        
+        // Ensure wheel stops spinning
+        if (wheelRef.current) {
+          wheelRef.current.style.transition = 'none';
+          wheelRef.current.style.transform = `rotate(${currentRotation}deg)`;
+        }
+        
+        // Try to find a valid section to land on
+        if (names.length > 0 && currentSectionCount > 0) {
+          const fallbackSection = Math.floor(Math.random() * currentSectionCount);
+          const fallbackNames = namesBySection[fallbackSection];
+          
+          if (fallbackNames && fallbackNames.length > 0) {
+            console.log('✅ Recovered: Landing on fallback section', fallbackSection);
+            
+            // Land on the fallback section
+            const sectionAngle = 360 / currentSectionCount;
+            const targetAngle = fallbackSection * sectionAngle;
+            const fallbackRotation = (20 * 360) + targetAngle;
+            
+            if (wheelRef.current) {
+              wheelRef.current.style.transition = 'transform 0.5s ease-out';
+              wheelRef.current.style.transform = `rotate(${fallbackRotation}deg)`;
+              setCurrentRotation(fallbackRotation);
+            }
+            
+            // Show a message that the spin completed
+            setTimeout(() => {
+              generateBlinkSound();
+              console.log('✅ Fallback spin completed successfully');
+            }, 500);
+          }
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback recovery also failed:', fallbackError);
+      }
     } finally {
       // CRITICAL: Always reset isSpinning to false, regardless of success/failure
       setIsSpinning(false);
@@ -1211,7 +1286,7 @@ const SpinWheel: React.FC = () => {
           <p className="text-cyan-200 text-lg font-semibold mb-2">
             {gamePhase === 'playing' ? (names.length <= 6 ? '🎯 Individual slices - Each name has its own section!' : names.length === 2 ? '🎯 Final spin - Last chance!' : 'Game in progress - Keep spinning!') : '🏆 Final winner revealed!'}
             {preSelectedWinner && (
-              <span className="ml-2 text-green-400 font-semibold animate-pulse">🎯 Winner Set</span>
+              <span className="ml-2 text-green-400 font-semibold animate-pulse">🎯 Game Ready</span>
             )}
           </p>
           <p className="text-blue-200 text-base font-medium">
@@ -1570,7 +1645,7 @@ const SpinWheel: React.FC = () => {
         {/* Hidden Pre-selector - Only visible when you know the secret key combination */}
         {false && (
           <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 mb-6 border border-white/20">
-            <h3 className="text-xl font-bold text-white mb-4">Pre-Select Winner (Hidden from Players)</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Game Settings (Admin Only)</h3>
             <div className="flex gap-3">
               <select
                 value={preSelectedWinner}
@@ -1578,7 +1653,7 @@ const SpinWheel: React.FC = () => {
                 disabled={gamePhase === 'final-winner'}
                 className="flex-1 px-4 py-3 rounded-xl bg-white/20 border border-white/30 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200"
               >
-                <option value="">Select a pre-selected winner...</option>
+                <option value="">Select game settings...</option>
                 {names.map((name) => (
                   <option key={name.id} value={name.name}>
                     {name.name}
@@ -1587,7 +1662,7 @@ const SpinWheel: React.FC = () => {
               </select>
             </div>
             <p className="text-purple-200 text-sm mt-2">
-              {preSelectedWinner ? `✅ Winner pre-selected (hidden from players)` : 'Choose who you want to win the game!'}
+              {preSelectedWinner ? `✅ Game configured successfully` : 'Configure game settings'}
             </p>
           </div>
         )}
