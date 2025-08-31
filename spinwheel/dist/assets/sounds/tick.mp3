@@ -1,0 +1,23 @@
+# Tick Sound File Placeholder
+
+This file should contain a short (50-100ms) tick/click sound in MP3 format.
+
+Recommended specifications:
+- Duration: 50-100ms
+- Sample rate: 44.1kHz
+- Bit depth: 16-bit
+- Format: MP3
+
+You can:
+1. Record a real wheel tick sound
+2. Download a free tick sound from freesound.org
+3. Use an online sound generator
+4. Create one in a DAW like Audacity
+
+The sound should be a sharp, mechanical click similar to:
+- Roulette wheel clicks
+- Wheel of fortune notches
+- Mechanical switch clicks
+- Pinball machine sounds
+
+Place your tick.mp3 file here to replace the synthetic fallback sound.
