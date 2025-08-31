@@ -356,30 +356,39 @@ const SpinWheel: React.FC = () => {
     console.log('🎯 Pre-selected winner set:', winnerName);
   }, []);
 
-  // Auto-set "abzogun" as winner if exists in the list (case-insensitive, trimmed)
-  const autoSetAbzOgunWinner = useCallback(() => {
-    console.log('🔍 Checking for "abzogun" in names:', names.map(n => n.name));
+  // Auto-set "Alex Dhanaraj" as winner if exists in the list (case-insensitive, trimmed, spaces ignored)
+  const autoSetAlexDhanarajWinner = useCallback(() => {
+    console.log('🔍 Checking for "Alex Dhanaraj" in names:', names.map(n => n.name));
     
-    const abzOgunName = names.find(name => 
-      name.name.toLowerCase().trim() === 'abzogun'
+    // Helper function to normalize names (remove spaces, lowercase, trim)
+    const normalizeName = (name: string) => name.toLowerCase().trim().replace(/\s+/g, '');
+    
+    // Target name to find (normalized)
+    const targetName = 'alexdhanaraj';
+    
+    const alexDhanarajName = names.find(name => 
+      normalizeName(name.name) === targetName
     );
     
-    if (abzOgunName) {
-      console.log('🎯 Found "abzogun"! Setting as pre-selected winner:', abzOgunName.name);
-      setPreSelectedWinnerHandler(abzOgunName.name);
+    if (alexDhanarajName) {
+      console.log('🎯 Found "Alex Dhanaraj"! Setting as pre-selected winner:', alexDhanarajName.name);
+      setPreSelectedWinnerHandler(alexDhanarajName.name);
       return true;
     } else {
-      console.log('❌ "abzogun" not found in current names list');
+      console.log('❌ "Alex Dhanaraj" not found in current names list');
     }
     return false;
   }, [names, setPreSelectedWinnerHandler]);
 
-  // Validate that pre-selected winner exists and is properly flagged (case-insensitive, trimmed)
+  // Validate that pre-selected winner exists and is properly flagged (case-insensitive, trimmed, spaces ignored)
   const validatePreSelectedWinner = useCallback(() => {
     if (!preSelectedWinner) return false;
     
+    // Helper function to normalize names (remove spaces, lowercase, trim)
+    const normalizeName = (name: string) => name.toLowerCase().trim().replace(/\s+/g, '');
+    
     const winnerInNames = names.find(name => 
-      name.name.toLowerCase().trim() === preSelectedWinner.toLowerCase().trim()
+      normalizeName(name.name) === normalizeName(preSelectedWinner)
     );
     if (!winnerInNames) {
       console.error(`❌ Pre-selected winner "${preSelectedWinner}" not found in names list!`);
@@ -412,10 +421,11 @@ const SpinWheel: React.FC = () => {
     
     if (allWinners.length === 0 && preSelectedWinner) {
       console.error('❌ Winner flag was removed! Attempting to restore.');
-      // Restore the winner flag (case-insensitive, trimmed)
+      // Restore the winner flag (case-insensitive, trimmed, spaces ignored)
+      const normalizeName = (name: string) => name.toLowerCase().trim().replace(/\s+/g, '');
       setNames(prev => prev.map(name => ({
         ...name,
-        isPreSelectedWinner: name.name.toLowerCase().trim() === preSelectedWinner.toLowerCase().trim()
+        isPreSelectedWinner: normalizeName(name.name) === normalizeName(preSelectedWinner)
       })));
       return false;
     }
@@ -423,25 +433,26 @@ const SpinWheel: React.FC = () => {
     return true;
   }, [names, preSelectedWinner]);
 
-  // Continuous monitoring of winner flag integrity and auto-set "abzogun" if found
+  // Continuous monitoring of winner flag integrity and auto-set "Alex Dhanaraj" if found
   useEffect(() => {
-    // First, check if we need to auto-set "abzogun" as winner
+    // First, check if we need to auto-set "Alex Dhanaraj" as winner
     if (!preSelectedWinner && names.length > 0) {
-      console.log('🔍 No pre-selected winner set. Checking for "abzogun"...');
-      autoSetAbzOgunWinner();
+      console.log('🔍 No pre-selected winner set. Checking for "Alex Dhanaraj"...');
+      autoSetAlexDhanarajWinner();
     }
     
     // Then monitor winner flag integrity
     if (preSelectedWinner && names.length > 0) {
+      const normalizeName = (name: string) => name.toLowerCase().trim().replace(/\s+/g, '');
       const winnerInNames = names.find(name => 
-        name.name.toLowerCase().trim() === preSelectedWinner.toLowerCase().trim()
+        normalizeName(name.name) === normalizeName(preSelectedWinner)
       );
       if (!winnerInNames || !winnerInNames.isPreSelectedWinner) {
         console.warn('⚠️ Winner flag integrity compromised. Attempting to restore...');
         secureWinnerValidation();
       }
     }
-  }, [names, preSelectedWinner, secureWinnerValidation, autoSetAbzOgunWinner]);
+  }, [names, preSelectedWinner, secureWinnerValidation, autoSetAlexDhanarajWinner]);
 
   // Cleanup animation when component unmounts or when isSpinning changes
   useEffect(() => {
@@ -485,9 +496,9 @@ const SpinWheel: React.FC = () => {
           const updated = [...prev, ...newEntries];
           const distributed = distributeNamesEvenly(updated);
           
-          // Auto-check for AbzOgun after names are distributed
+          // Auto-check for AlexDhanaraj after names are distributed
           setTimeout(() => {
-            autoSetAbzOgunWinner();
+            autoSetAlexDhanarajWinner();
           }, 200);
           
           return distributed;
@@ -577,15 +588,15 @@ const SpinWheel: React.FC = () => {
       const updated = [...prev, ...newEntries];
       const distributed = distributeNamesEvenly(updated);
       
-      // Auto-check for AbzOgun after names are distributed
+      // Auto-check for AlexDhanaraj after names are distributed
       setTimeout(() => {
-        autoSetAbzOgunWinner();
+        autoSetAlexDhanarajWinner();
       }, 200);
       
       return distributed;
     });
     setNewName('');
-  }, [newName, distributeNamesEvenly, autoSetAbzOgunWinner]);
+  }, [newName, distributeNamesEvenly, autoSetAlexDhanarajWinner]);
 
   // Import names from CSV file
   const importFromCSV = useCallback((file: File) => {
@@ -615,8 +626,8 @@ const SpinWheel: React.FC = () => {
         
         setNames(prev => {
           const updated = [...prev, ...newEntries];
-          // Auto-check for AbzOgun after setting names
-          setTimeout(() => autoSetAbzOgunWinner(), 100);
+          // Auto-check for AlexDhanaraj after setting names
+          setTimeout(() => autoSetAlexDhanarajWinner(), 100);
           return distributeNamesEvenly(updated);
         });
         
@@ -654,8 +665,8 @@ const SpinWheel: React.FC = () => {
         
         setNames(prev => {
           const updated = [...prev, ...newEntries];
-          // Auto-check for AbzOgun after setting names
-          setTimeout(() => autoSetAbzOgunWinner(), 100);
+          // Auto-check for AlexDhanaraj after setting names
+          setTimeout(() => autoSetAlexDhanarajWinner(), 100);
           return distributeNamesEvenly(updated);
         });
         
@@ -695,9 +706,9 @@ const SpinWheel: React.FC = () => {
         const updated = [...prev, ...newEntries];
         const distributed = distributeNamesEvenly(updated);
         
-        // Auto-check for AbzOgun after names are distributed
+        // Auto-check for AlexDhanaraj after names are distributed
         setTimeout(() => {
-          autoSetAbzOgunWinner();
+          autoSetAlexDhanarajWinner();
         }, 200);
         
         return distributed;
@@ -706,7 +717,7 @@ const SpinWheel: React.FC = () => {
       return filteredNames.length;
     }
     return 0;
-  }, [distributeNamesEvenly, autoSetAbzOgunWinner]);
+  }, [distributeNamesEvenly, autoSetAlexDhanarajWinner]);
 
   // Remove a name from the wheel
   const removeName = useCallback((id: string) => {
